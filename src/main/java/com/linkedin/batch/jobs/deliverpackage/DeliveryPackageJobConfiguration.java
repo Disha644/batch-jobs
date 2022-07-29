@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 
 @Configuration
 public class DeliveryPackageJobConfiguration {
@@ -24,13 +25,17 @@ public class DeliveryPackageJobConfiguration {
 	@Qualifier("deliveryFlow")
 	public Flow deliveryFlow;
 
+	@Autowired
+	@Qualifier("billingFlow")
+	public Flow billingFlow;
 
 	@Bean
 	@Qualifier("deliverPackage")
 	public Job deliverPackage(JobBuilderFactory jobBuilderFactory) {
 		return jobBuilderFactory.get("deliverPackage")
 			.start(packageItemStep())
-				.on("*").to(deliveryFlow)
+			.split(new SimpleAsyncTaskExecutor())
+			.add(deliveryFlow, billingFlow)
 			.end()
 			.build();
 	}
